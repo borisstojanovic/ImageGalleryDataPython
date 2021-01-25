@@ -1,0 +1,14 @@
+{%  extends 'master.html' %}
+
+{% block title %}
+    Graph
+{% endblock %}
+
+{%  block content %}
+    <body>
+      {% autoescape off %}
+          <h1>{{ title }}</h1>
+        {{ plot_div }}
+      {% endautoescape %}
+    </body>
+{% endblock %}

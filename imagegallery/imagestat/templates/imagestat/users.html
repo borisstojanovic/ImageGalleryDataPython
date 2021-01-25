@@ -1,10 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{%  extends 'master.html' %}
 
-</body>
-</html>
+{% block title %}
+    Users
+{% endblock %}
+
+{%  block content %}
+    <div class="list-group">
+        {% for user in users %}
+            <div class="list-group-item mb-4">
+                <p class="card-text">{{ user.username }}</p>
+                <p class="card-text"><small class="text-muted">Joined at {{ user.date_created }}</small></p>
+                <a href="{% url 'imagestat:user_activity' user.id %}">User Activity</a>
+            </div>
+        {% endfor %}
+    </div>
+    {% if users.has_other_pages %}
+    <ul class="pagination m-md-auto">
+        {% if users.has_previous %}
+            <li><a href="?page={{ users.previous_page_number }}">&laquo;</a></li>
+        {% else %}
+            <li class="disabled"><span>&laquo;</span></li>
+        {% endif %}
+    {% for i in users.paginator.page_range %}
+        {% if users.number == i %}
+            <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+        {% else %}
+            <li><a href="?page={{ i }}">{{ i }}</a></li>
+        {% endif %}
+    {% endfor %}
+    {% if users.has_next %}
+        <li><a href="?page={{ users.next_page_number }}">&raquo;</a></li>
+    {% else %}
+        <li class="disabled"><span>&raquo;</span></li>
+    {% endif %}
+  </ul>
+{% endif %}
+{% endblock %}

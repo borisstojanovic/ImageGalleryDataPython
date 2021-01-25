@@ -9,14 +9,8 @@ import datetime
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
-def home2(request):
-    x_data = [0, 1, 2, 3]
-    y_data = [x ** 2 for x in x_data]
-    plot_div = plot([Scatter(x=x_data, y=y_data,
-                             mode='lines', name='test',
-                             opacity=0.8, marker_color='green')],
-                    output_type='div')
-    return render(request, "imagestat\\test2.html", context={'plot_div': plot_div})
+def index(req):
+    return render(req, 'imagestat\\index.html', {'page_title': 'ImageStat'})
 
 
 def images(req):
@@ -34,40 +28,127 @@ def images(req):
     return render(req, 'imagestat\\images.html', {'images': images})
 
 
-def imagesbydate(request):
-    x_data = Images.objects.extra({'date_created': "date(time)"}). \
-        values('date_created').annotate(created_count=Count('id')).order_by('time')
+def users(req):
+    user_list = User.objects.all()
+    page = req.GET.get('page', 1)
 
+    paginator = Paginator(user_list, 7)
+    try:
+        users = paginator.page(page)
+    except PageNotAnInteger:
+        users = paginator.page(1)
+    except EmptyPage:
+        users = paginator.page(paginator.num_pages)
+
+    return render(req, 'imagestat\\users.html', {'users': users})
+
+
+def imagesbydate(request):
+    images = Images.objects.extra({'time': "date(time)"}). \
+        values('time').annotate(created_count=Count('id')).order_by('time')
+
+    images = list(images)
+
+    if len(images) == 0:
+        return render(request, "imagestat\\graph.html", context={'title': "No Data"})
+    else:
+        y_data = [x.get('created_count') for x in images]
+        x_data1 = [x.get('time') for x in images]
+        scatter = plotly.graph_objs.Scatter(x=x_data1, y=y_data, name='New Images', mode='markers + lines')
+
+        y_data2 = [x.get('created_count') for x in images]
+        x_data2 = [x.get('time') for x in images]
+
+        i = 1
+        while len(y_data2) > i:
+            y_data2[i] = y_data2[i - 1] + y_data2[i]
+            i += 1
+
+        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Total Images', mode='markers + lines')
+
+        layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
+                                                 'tick0': x_data1[0] if len(x_data1) else datetime.date.today(),
+                                                 'tickmode': 'linear',
+                                                 'dtick': 86400000.0 * 1})  # 1 day
+        fig = plotly.graph_objs.Figure(data=[scatter, scatter2], layout=layout)
+        plot_div = plot(fig, output_type='div')
+        return render(request, "imagestat\\graph.html", context={'title': "Images", 'plot_div': plot_div})
+
+
+def usersbydate(request):
+    x_data = User.objects.extra({'date_created': "date(date_created)"}). \
+        values('date_created').annotate(created_count=Count('id')).order_by('date_created')
     x_data = list(x_data)
 
-    y_data = [x.get('created_count') for x in x_data]
-    x_data2 = [x.get('date_created') for x in x_data]
-    scatter = plotly.graph_objs.Scatter(x=x_data2, y=y_data)
-    layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
-                                             'tick0': x_data2[0] if len(x_data2) else datetime.date.today(),
-                                             'tickmode': 'linear',
-                                             'dtick': 86400000.0 * 1})  # 1 day
-    fig = plotly.graph_objs.Figure(data=[scatter], layout=layout)
-    plot_div = plot(fig, output_type='div')
-    return render(request, "imagestat\\test2.html", context={'plot_div': plot_div})
+    if len(x_data) == 0:
+        return render(request, "imagestat\\graph.html", context={'plot_div': "No Data"})
+    else:
+        y_data = [x.get('created_count') for x in x_data]
+        x_data2 = [x.get('date_created') for x in x_data]
+        scatter = plotly.graph_objs.Scatter(x=x_data2, y=y_data, name='New Users', mode='markers + lines')
+
+        y_data2 = [x.get('created_count') for x in x_data]
+        i = 1
+        while len(y_data2) > i:
+            y_data2[i] = y_data2[i - 1] + y_data2[i]
+            i += 1
+
+        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Total Users', mode='markers + lines')
+
+        layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
+                                                 'tick0': x_data2[0] if len(x_data2) else datetime.date.today(),
+                                                 'tickmode': 'linear',
+                                                 'dtick': 86400000.0 * 1})  # 1 day
+        fig = plotly.graph_objs.Figure(data=[scatter, scatter2], layout=layout)
+        plot_div = plot(fig, output_type='div')
+        return render(request, "imagestat\\graph.html", context={'title': "Users", 'plot_div': plot_div})
+
+
+def commentsbydate(request):
+    x_data = Comment.objects.extra({'date_created': "date(date_created)"}). \
+        values('date_created').annotate(created_count=Count('id')).order_by('date_created')
+    x_data = list(x_data)
+    if len(x_data) == 0:
+        return render(request, "imagestat\\graph.html", context={'plot_div': "No Data"})
+    else:
+        y_data = [x.get('created_count') for x in x_data]
+        x_data2 = [x.get('date_created') for x in x_data]
+        scatter = plotly.graph_objs.Scatter(x=x_data2, y=y_data, name='New Comments', mode='markers + lines')
+
+        y_data2 = [x.get('created_count') for x in x_data]
+        i = 1
+        while len(y_data2) > i:
+            y_data2[i] = y_data2[i - 1] + y_data2[i]
+            i += 1
+
+        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Total Comments', mode='markers + lines')
+
+        layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
+                                                 'tick0': x_data2[0] if len(x_data2) else datetime.date.today(),
+                                                 'tickmode': 'linear',
+                                                 'dtick': 86400000.0 * 1})  # 1 day
+        fig = plotly.graph_objs.Figure(data=[scatter, scatter2], layout=layout)
+        plot_div = plot(fig, output_type='div')
+        return render(request, "imagestat\\graph.html", context={'title': "Comments", 'plot_div': plot_div})
 
 
 def commentsbyimage(request, id):
     x_data = Comment.objects.filter(image_id=id).extra({'date_created': "date(date_created)"}). \
         values('date_created').annotate(created_count=Count('id')).order_by('date_created')
     x_data = list(x_data)
-    y_data = [x.get('created_count') for x in x_data]
-    x_data2 = [x.get('date_created') for x in x_data]
-    print(x_data2)
-    print(y_data)
-    scatter = plotly.graph_objs.Scatter(x=x_data2, y=y_data)
-    layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
-                                             'tick0': x_data2[0] if len(x_data2) else datetime.date.today(),
-                                             'tickmode': 'linear',
-                                             'dtick': 86400000.0 * 1})  # 1 day
-    fig = plotly.graph_objs.Figure(data=[scatter], layout=layout)
-    plot_div = plot(fig, output_type='div')
-    return render(request, "imagestat\\test2.html", context={'plot_div': plot_div})
+    if len(x_data) == 0:
+        return render(request, "imagestat\\graph.html", context={'plot_div': "No Data"})
+    else:
+        y_data = [x.get('created_count') for x in x_data]
+        x_data2 = [x.get('date_created') for x in x_data]
+        scatter = plotly.graph_objs.Scatter(x=x_data2, y=y_data)
+        layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
+                                                 'tick0': x_data2[0] if len(x_data2) else datetime.date.today(),
+                                                 'tickmode': 'linear',
+                                                 'dtick': 86400000.0 * 1})  # 1 day
+        fig = plotly.graph_objs.Figure(data=[scatter], layout=layout)
+        plot_div = plot(fig, output_type='div')
+        return render(request, "imagestat\\graph.html", context={'plot_div': plot_div})
 
 
 def commentsbyimagetotal(request, id):
@@ -75,7 +156,7 @@ def commentsbyimagetotal(request, id):
         values('date_created').annotate(created_count=Count('id')).order_by('date_created')
     x_data = list(x_data)
     if len(x_data) == 0:
-        return render(request, "imagestat\\test2.html", context={'plot_div': 'No Data'})
+        return render(request, "imagestat\\graph.html", context={'plot_div': 'No Data'})
     else:
         y_data = [x.get('created_count') for x in x_data]
         i = 1
@@ -91,60 +172,80 @@ def commentsbyimagetotal(request, id):
                                                  'dtick': 86400000.0 * 1})  # 1 day
         fig = plotly.graph_objs.Figure(data=[scatter], layout=layout)
         plot_div = plot(fig, output_type='div')
-        return render(request, "imagestat\\test2.html", context={'plot_div': plot_div})
+        return render(request, "imagestat\\graph.html", context={'plot_div': plot_div})
 
 
-def useractivity(request):
-    x_data = Comment.objects.filter(user_id=2).extra({'date_created': "date(date_created)"}). \
+def useractivity(request, id):
+    comments = Comment.objects.filter(user_id=id).extra({'date_created': "date(date_created)"}). \
         values('date_created').annotate(created_count=Count('id')).order_by('date_created')
-    x_data = list(x_data)
-    y_data1 = [x.get('created_count') for x in x_data]
 
-    x_data1 = [x.get('date_created') for x in x_data]
-    scatter1 = plotly.graph_objs.Scatter(x=x_data1, y=y_data1, name='Comments', mode='markers + lines')
-
-    x_data = Images.objects.filter(owner_id=2).extra({'time': "date(time)"}). \
+    images = Images.objects.filter(owner_id=id).extra({'time': "date(time)"}). \
         values('time').annotate(created_count=Count('id')).order_by('time')
-    x_data = list(x_data)
-    y_data2 = [x.get('created_count') for x in x_data]
 
-    x_data2 = [x.get('time') for x in x_data]
-    scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Images', mode='markers + lines')
+    if len(comments) == 0 and len(images) == 0:
+        return render(request, "imagestat\\graph.html", context={'plot_div': "No data"})
+    else:
+        comments = list(comments)
+        y_data1 = [x.get('created_count') for x in comments]
 
-    layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
-                                             'tick0': x_data1[0] if len(x_data1) else x_data2[0] if len(x_data2) else datetime.date.today(),
-                                             'tickmode': 'linear',
-                                             'dtick': 86400000.0 * 1})  # 1 day
+        x_data1 = [x.get('date_created') for x in comments]
+        scatter1 = plotly.graph_objs.Scatter(x=x_data1, y=y_data1, name='Comments', mode='markers + lines')
 
-    fig = plotly.graph_objs.Figure(data=[scatter1, scatter2], layout=layout)
-    plot_div = plot(fig, output_type='div')
+        images = list(images)
+        y_data2 = [x.get('created_count') for x in images]
 
-    return render(request, "imagestat\\test2.html", context={'plot_div': plot_div})
+        x_data2 = [x.get('time') for x in images]
+        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Images', mode='markers + lines')
+
+        layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
+                                                 'tick0': x_data1[0] if len(x_data1) else x_data2[0] if len(
+                                                     x_data2) else datetime.date.today(),
+                                                 'tickmode': 'linear',
+                                                 'dtick': 86400000.0 * 1})  # 1 day
+
+        fig = plotly.graph_objs.Figure(data=[scatter1, scatter2], layout=layout)
+        plot_div = plot(fig, output_type='div')
+
+        return render(request, "imagestat\\graph.html", context={'plot_div': plot_div})
 
 
 def totalactivity(request):
-    x_data = Comment.objects.extra({'date_created': "date(date_created)"}). \
+    comments = Comment.objects.extra({'date_created': "date(date_created)"}). \
         values('date_created').annotate(created_count=Count('id')).order_by('date_created')
-    x_data = list(x_data)
-    y_data1 = [x.get('created_count') for x in x_data]
 
-    x_data1 = [x.get('date_created') for x in x_data]
-    scatter1 = plotly.graph_objs.Scatter(x=x_data1, y=y_data1, name='Comments', mode='markers + lines')
-
-    x_data = Images.objects.extra({'time': "date(time)"}). \
+    images = Images.objects.extra({'time': "date(time)"}). \
         values('time').annotate(created_count=Count('id')).order_by('time')
-    x_data = list(x_data)
-    y_data2 = [x.get('created_count') for x in x_data]
 
-    x_data2 = [x.get('time') for x in x_data]
-    scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Images', mode='markers + lines')
+    users = User.objects.extra({'date_created': "date(date_created)"}). \
+        values('date_created').annotate(created_count=Count('id')).order_by('date_created')
 
-    layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
-                                             'tick0': x_data1[0] if len(x_data1) else x_data2[0] if len(x_data2) else datetime.datetime.now(),
-                                             'tickmode': 'linear',
-                                             'dtick': 86400000.0 * 1})  # 1 day
+    if len(comments) == 0 and len(images) == 0 and len(users) == 0:
+        return render(request, "imagestat\\graph.html", context={'plot_div': "No data"})
+    else:
+        comments = list(comments)
+        y_data1 = [x.get('created_count') for x in comments]
 
-    fig = plotly.graph_objs.Figure(data=[scatter1, scatter2], layout=layout)
-    plot_div = plot(fig, output_type='div')
+        x_data1 = [x.get('date_created') for x in comments]
+        scatter1 = plotly.graph_objs.Scatter(x=x_data1, y=y_data1, name='Comments', mode='markers + lines')
 
-    return render(request, "imagestat\\test2.html", context={'title': 'Activity', 'plot_div': plot_div})
+        images = list(images)
+        y_data2 = [x.get('created_count') for x in images]
+
+        x_data2 = [x.get('time') for x in images]
+        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Images', mode='markers + lines')
+
+        users = list(users)
+        y_data3 = [x.get('created_count') for x in users]
+        x_data3 = [x.get('date_created') for x in users]
+        scatter3 = plotly.graph_objs.Scatter(x=x_data3, y=y_data3, name='Users', mode='markers + lines')
+
+        layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
+                                                 'tick0': x_data1[0] if len(x_data1) else x_data2[0] if len(
+                                                     x_data2) else datetime.date.today(),
+                                                 'tickmode': 'linear',
+                                                 'dtick': 86400000.0 * 1})  # 1 day
+
+        fig = plotly.graph_objs.Figure(data=[scatter1, scatter2, scatter3], layout=layout)
+        plot_div = plot(fig, output_type='div')
+
+        return render(request, "imagestat\\graph.html", context={'plot_div': plot_div})

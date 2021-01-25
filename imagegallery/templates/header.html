@@ -48,27 +48,20 @@
         Image Gallery Data
     </a>
     <div class="dropdown">
-        <button class="dropbtn">Image Statistics</button>
-            <div class="dropdown-content">
-                <a href="{% url 'imagestat:images' %}">Link 1</a>
-                <a href="{% url 'imagestat:images' %}">Link 2</a>
-                <a href="{% url 'imagestat:images' %}">Link 3</a>
-            </div>
-    </div>
-    <div class="dropdown">
-        <button class="dropbtn">User Statistics</button>
-            <div class="dropdown-content">
-                <a href="{% url 'imagestat:images' %}">Comments By Date</a>
-                <a href="{% url 'imagestat:images' %}">Images By Date</a>
-                <a href="{% url 'imagestat:images' %}">General</a>
-            </div>
-    </div>
-    <div class="dropdown">
         <button class="dropbtn">General Statistics</button>
             <div class="dropdown-content">
-                <a href="{% url 'imagestat:images' %}">Link 1</a>
-                <a href="{% url 'imagestat:images' %}">Link 2</a>
-                <a href="{% url 'imagestat:images' %}">Link 3</a>
+                <a href="{% url 'imagestat:images_by_date' %}">Images By Date</a>
+                <a href="{% url 'imagestat:comments_by_date' %}">Comments By Date</a>
+                <a href="{% url 'imagestat:users_by_date' %}">Users By Date</a>
+                <a href="{% url 'imagestat:activity' %}">General Activity</a>
             </div>
     </div>
+    <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'imagestat:images' %}">List Images</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'imagestat:users' %}">List Users</a>
+        </li>
+    </ul>
 </nav>
