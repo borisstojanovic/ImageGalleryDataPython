@@ -1,0 +1,41 @@
+{%  extends 'master.html' %}
+
+{% block title %}
+    Images
+{% endblock %}
+
+{%  block content %}
+    <div class="card-deck">
+        {% for image in images %}
+            <div class="card mb-4">
+                <img class="card-img-top img-fluid" src="{{image.path.url}}" alt="No Image">
+                <p class="card-body">
+                    <p class="card-text">{{ image.description }}</p>
+                    <p class="card-text"><small class="text-muted">Created at {{ image.time }}</small></p>
+                    <a href="{% url 'imagestat:comments' image.id %}">Comments Total</a>
+                    <a href="{% url 'imagestat:comments' image.id %}">Comments By Date</a>
+            </div>
+        {% endfor %}
+    </div>
+    {% if images.has_other_pages %}
+    <ul class="pagination m-md-auto">
+        {% if users.has_previous %}
+            <li><a href="?page={{ images.previous_page_number }}">&laquo;</a></li>
+        {% else %}
+            <li class="disabled"><span>&laquo;</span></li>
+        {% endif %}
+    {% for i in images.paginator.page_range %}
+        {% if images.number == i %}
+            <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+        {% else %}
+            <li><a href="?page={{ i }}">{{ i }}</a></li>
+        {% endif %}
+    {% endfor %}
+    {% if images.has_next %}
+        <li><a href="?page={{ images.next_page_number }}">&raquo;</a></li>
+    {% else %}
+        <li class="disabled"><span>&raquo;</span></li>
+    {% endif %}
+  </ul>
+{% endif %}
+{% endblock %}
