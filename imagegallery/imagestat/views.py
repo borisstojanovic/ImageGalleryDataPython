@@ -3,6 +3,8 @@ from django.db.models import Count
 from django.shortcuts import render, get_object_or_404
 from plotly.offline import plot
 from plotly.graph_objs import Scatter
+from plotly.subplots import make_subplots
+
 from .models import Images, Comment, User
 import plotly
 import datetime
@@ -64,7 +66,8 @@ def imagesbydate(request):
             y_data2[i] = y_data2[i - 1] + y_data2[i]
             i += 1
 
-        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Total Images', mode='markers + lines')
+        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Total Images', mode='lines + markers')
+        bar = plotly.graph_objs.Bar(x=x_data2, y=y_data2, name='Total Images')
 
         layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
                                                  'tick0': x_data1[0] if len(x_data1) else datetime.date.today(),
@@ -72,7 +75,12 @@ def imagesbydate(request):
                                                  'dtick': 86400000.0 * 1})  # 1 day
         fig = plotly.graph_objs.Figure(data=[scatter, scatter2], layout=layout)
         plot_div = plot(fig, output_type='div')
-        return render(request, "imagestat\\graph.html", context={'title': "Images", 'plot_div': plot_div})
+
+        fig2 = plotly.graph_objs.Figure(data=bar, layout=layout)
+        plot_div2 = plot(fig2, output_type='div')
+        return render(request, "imagestat\\graph.html",
+                      context={'title': "Images for date", 'plot_div': plot_div, 'title2': "Total Images",
+                               'plot_div2': plot_div2})
 
 
 def usersbydate(request):
@@ -93,7 +101,8 @@ def usersbydate(request):
             y_data2[i] = y_data2[i - 1] + y_data2[i]
             i += 1
 
-        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Total Users', mode='markers + lines')
+        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Total Users', mode='lines + markers')
+        bar = plotly.graph_objs.Bar(x=x_data2, y=y_data2, name='Total Users')
 
         layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
                                                  'tick0': x_data2[0] if len(x_data2) else datetime.date.today(),
@@ -101,7 +110,12 @@ def usersbydate(request):
                                                  'dtick': 86400000.0 * 1})  # 1 day
         fig = plotly.graph_objs.Figure(data=[scatter, scatter2], layout=layout)
         plot_div = plot(fig, output_type='div')
-        return render(request, "imagestat\\graph.html", context={'title': "Users", 'plot_div': plot_div})
+
+        fig2 = plotly.graph_objs.Figure(data=bar, layout=layout)
+        plot_div2 = plot(fig2, output_type='div')
+        return render(request, "imagestat\\graph.html",
+                      context={'title': "Users for date", 'plot_div': plot_div, 'title2': "Total Users",
+                               'plot_div2': plot_div2})
 
 
 def commentsbydate(request):
@@ -121,7 +135,8 @@ def commentsbydate(request):
             y_data2[i] = y_data2[i - 1] + y_data2[i]
             i += 1
 
-        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Total Comments', mode='markers + lines')
+        scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Total Comments', mode='lines + markers')
+        bar = plotly.graph_objs.Bar(x=x_data2, y=y_data2, name='Total Comments')
 
         layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
                                                  'tick0': x_data2[0] if len(x_data2) else datetime.date.today(),
@@ -129,7 +144,12 @@ def commentsbydate(request):
                                                  'dtick': 86400000.0 * 1})  # 1 day
         fig = plotly.graph_objs.Figure(data=[scatter, scatter2], layout=layout)
         plot_div = plot(fig, output_type='div')
-        return render(request, "imagestat\\graph.html", context={'title': "Comments", 'plot_div': plot_div})
+
+        fig2 = plotly.graph_objs.Figure(data=bar, layout=layout)
+        plot_div2 = plot(fig2, output_type='div')
+        return render(request, "imagestat\\graph.html",
+                      context={'title': "Comments for date", 'plot_div': plot_div, 'title2': "Total Comments",
+                               'plot_div2': plot_div2})
 
 
 def commentsbyimage(request, id):
@@ -197,6 +217,27 @@ def useractivity(request, id):
         x_data2 = [x.get('time') for x in images]
         scatter2 = plotly.graph_objs.Scatter(x=x_data2, y=y_data2, name='Images', mode='markers + lines')
 
+        total_dict = {}
+
+        i = 0
+        for y in y_data1:
+            total_dict[x_data1[i]] = y
+            i += 1
+
+        i = 0
+        for y in y_data2:
+            if total_dict[x_data2[i]]:
+                total_dict[x_data2[i]] += y
+            else:
+                total_dict[x_data2[i]] = y
+            i += 1
+
+        x_data3 = []
+        y_data3 = []
+        for key in total_dict:
+            x_data3.append(key)
+            y_data3.append(total_dict[key])
+
         layout = plotly.graph_objs.Layout(xaxis={'type': 'date',
                                                  'tick0': x_data1[0] if len(x_data1) else x_data2[0] if len(
                                                      x_data2) else datetime.date.today(),
@@ -206,7 +247,15 @@ def useractivity(request, id):
         fig = plotly.graph_objs.Figure(data=[scatter1, scatter2], layout=layout)
         plot_div = plot(fig, output_type='div')
 
-        return render(request, "imagestat\\graph.html", context={'plot_div': plot_div})
+        bar = plotly.graph_objs.Bar(x=x_data3, y=y_data3, name='Total')
+
+        fig2 = plotly.graph_objs.Figure(data=bar, layout=layout)
+
+        plot_div2 = plot(fig2, output_type='div')
+
+        return render(request, "imagestat\\graph.html",
+                      context={'title': "Comments and images for date", 'title2': "Total activity for date",
+                               'plot_div': plot_div, 'plot_div2': plot_div2})
 
 
 def totalactivity(request):
@@ -248,4 +297,41 @@ def totalactivity(request):
         fig = plotly.graph_objs.Figure(data=[scatter1, scatter2, scatter3], layout=layout)
         plot_div = plot(fig, output_type='div')
 
-        return render(request, "imagestat\\graph.html", context={'plot_div': plot_div})
+        total_dict = {}
+
+        i = 0
+        for y in y_data1:
+            total_dict[x_data1[i]] = y
+            i += 1
+
+        i = 0
+        for y in y_data2:
+            if total_dict[x_data2[i]]:
+                total_dict[x_data2[i]] += y
+            else:
+                total_dict[x_data2[i]] = y
+            i += 1
+
+        i = 0
+        for y in y_data3:
+            if total_dict[x_data3[i]]:
+                total_dict[x_data3[i]] += y
+            else:
+                total_dict[x_data3[i]] = y
+            i += 1
+
+        x_data4 = []
+        y_data4 = []
+        for key in total_dict:
+            x_data4.append(key)
+            y_data4.append(total_dict[key])
+
+        bar = plotly.graph_objs.Bar(x=x_data4, y=y_data4, name='Total')
+
+        fig2 = plotly.graph_objs.Figure(data=bar, layout=layout)
+
+        plot_div2 = plot(fig2, output_type='div')
+
+        return render(request, "imagestat\\graph.html",
+                      context={'title': "Comments, images and users for date", 'title2':
+                          "Total activity for date", 'plot_div': plot_div, 'plot_div2': plot_div2})

@@ -8,7 +8,13 @@
     <body>
       {% autoescape off %}
           <h1>{{ title }}</h1>
+          <div class="row">
         {{ plot_div }}
+          </div>
+          <h1>{{ title2 }}</h1>
+          <div class="row">
+        {{ plot_div2 }}
+          </div>
       {% endautoescape %}
     </body>
 {% endblock %}
